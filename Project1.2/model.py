@@ -15,15 +15,13 @@ def _calculate_locs(x, y, V_x, V_y, dt):
     return (x_n, y_n)
 
 
-def calculate_trajectory(l=0, q=0, Q=0, m=0, alpha=0, V_0=0, dt=0, epsilon=1, max_step = 1):
+def calculate_trajectory(l=0, q=0, Q=0, m=0, alpha=0, V_0=0, dt=0, epsilon=1, max_step=0.5):
     x = np.array([l])
     y = np.array([0])
     V_x = np.array([V_0 * np.cos(alpha)])
     V_y = np.array([V_0 * np.sin(alpha)])
     t = 0
-    i = 0
     while x[-1]**2 + y[-1]**2 < (3*l) ** 2 and t < 3:
-        i += 1
         t += dt
         V_xn, V_yn = _calculate_speeds(x, y, V_x, V_y, m, Q, q, dt, epsilon)
         V_x = np.append(V_x, V_xn)
@@ -33,5 +31,4 @@ def calculate_trajectory(l=0, q=0, Q=0, m=0, alpha=0, V_0=0, dt=0, epsilon=1, ma
             break
         x = np.append(x, x_n)
         y = np.append(y, y_n)
-        # print(i , x[-1], y[-1])
-    return (x, y, t)
+    return (x, y)
