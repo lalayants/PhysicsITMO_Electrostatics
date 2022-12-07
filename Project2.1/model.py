@@ -3,34 +3,51 @@ import numpy as np
 
 mu0 = np.pi * 4 * 10 * -7
 
-def _calculate_speeds(x, y, V_x, V_y, m, Q, q, dt, epsilon):
-    V_xn = V_x[-1] + dt * q * Q * x[-1] / ((4 * np.pi * epsilon * m *
-                                           8.8542 * 10 ** -12) * (x[-1]**2 + y[-1]**2)**3/2)
-    V_yn = V_y[-1] + dt * q * Q * y[-1] / ((4 * np.pi * epsilon * m *
-                                            8.8542 * 10 ** -12) * (x[-1]**2 + y[-1]**2)**3/2)
-    return V_xn, V_yn
+
+def _getStartV(start_angels, v0):
+    v = np.array([np.cos(start_angels[0]), np.sin(start_angels[0]), np.sin(start_angels[1])])
+    return np.array(v0 * v / np.linalg.norm(v)).reshape(-1, 3)
 
 
-def _calculate_locs(x, y, V_x, V_y, dt):
-    x_n = x[-1] + dt * V_x[-1]
-    y_n = y[-1] + dt * V_y[-1]
-    return (x_n, y_n)
+def _getModuleB(I, point):
+    return mu0 / (4 * np.pi) * 2 * I / np.linalg.norm(point[1:])
 
 
-def calculate_trajectory(l=0, q=0, Q=0, m=0, alpha=0, V_0=0, dt=0, epsilon=1, max_step=0.5):
-    x = np.array([l])
-    y = np.array([0])
-    V_x = np.array([V_0 * np.cos(alpha)])
-    V_y = np.array([V_0 * np.sin(alpha)])
+def _getB(I, point):
+    B = _getModuleB(I, point)  # модуль вектора В
+    r = np.array([0, point[1], point[2]])  # вектор от провода до заряда
+    r = r / np.linalg.norm(r)  # нормированный вектор от провода до заряда
+    vectB = np.cross([1, 0, 0], r)  # направление магнитного поля
+    normVectB = vectB / np.linalg.norm(vectB)  # нормированное направление вектор B
+    return normVectB * B  # направление на модуль - искомый вектор
+
+
+def _getF(q, V, I, point):
+    # print(_getB(I, point), _getB(I, point).shape) 
+    # print(V, V.shape)
+    return q * np.cross(V, _getB(I, point))
+
+
+def _calculate_speed(V, q, m, dt, I, point):
+    return V + _getF(q, V, I, point)/m * dt
+
+
+def _calculate_position(point, V, dt):
+    # print(V, point)
+    return point + V * dt
+
+
+def calculate_trajectory(start_position, start_angels, v0, q, m, I, R, dt=0.001):
     t = 0
-    while x[-1]**2 + y[-1]**2 < (3*l) ** 2 and t < 3:
+    V = _getStartV(start_angels, v0)
+    positions = np.array(start_position).reshape(-1, 3)
+    # print(positions, V)
+    while np.linalg.norm(positions[-1][1:]) > R and t < 3:
         t += dt
-        V_xn, V_yn = _calculate_speeds(x, y, V_x, V_y, m, Q, q, dt, epsilon)
-        V_x = np.append(V_x, V_xn)
-        V_y = np.append(V_y, V_yn)
-        x_n, y_n = _calculate_locs(x, y, V_x, V_y, dt)
-        if abs(x_n - x[-1]) > max_step or abs(y_n - y[-1]) > max_step or x[-1]**2 + y[-1]**2 < (max_step/10 * l) ** 2:
-            break
-        x = np.append(x, x_n)
-        y = np.append(y, y_n)
-    return (x, y)
+        # print(V, _calculate_speed(V[-1], q, m, dt, I, positions[-1]))
+        V = np.append(V, _calculate_speed(V[-1], q, m, dt, I, positions[-1]).reshape(1,3), axis=0)
+        # print(t, V[-1])
+        # print(V)
+        positions = np.append(positions, _calculate_position(positions[-1], V[-1], dt).reshape(1,3), axis=0)
+
+    return positions
