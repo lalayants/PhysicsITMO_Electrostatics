@@ -13,11 +13,11 @@ def _getModuleB(I, point):
 
 
 def _getB(I, point):
-    B = _getModuleB(I, point)  # модуль вектора В
+    # B = _getModuleB(I, point)  # модуль вектора В
     r = np.array([0, point[1], point[2]])  # вектор от провода до заряда
     vectB = np.cross([1, 0, 0], r)  # направление магнитного поля
     normVectB = vectB / np.linalg.norm(vectB)  # нормированное направление вектор B
-    return normVectB * B  # направление на модуль - искомый вектор
+    return normVectB * _getModuleB(I, point)  # направление на модуль - искомый вектор
 
 
 def _getF(q, V, I, point):
