@@ -34,10 +34,12 @@ def _calculate_position(point, V, dt):
 
 def calculate_trajectory(start_position, start_angels, v0, q, m, I, R, t_max, dt=0.001):
     t = 0
-    V = _getStartV(start_angels, v0)
+    speeds = _getStartV(start_angels, v0)
     positions = np.array(start_position).reshape(-1, 3)
+    clocks = [t]
     while np.linalg.norm(positions[-1][1:]) > R and t < t_max:
         t += dt
-        V = np.append(V, _calculate_speed(V[-1], q, m, dt, I, positions[-1]).reshape(1,3), axis=0)
-        positions = np.append(positions, _calculate_position(positions[-1], V[-1], dt).reshape(1,3), axis=0)
-    return positions
+        clocks.append(t)
+        speeds = np.append(speeds, _calculate_speed(speeds[-1], q, m, dt, I, positions[-1]).reshape(1,3), axis=0)
+        positions = np.append(positions, _calculate_position(positions[-1], speeds[-1], dt).reshape(1,3), axis=0)
+    return positions, speeds, clocks
